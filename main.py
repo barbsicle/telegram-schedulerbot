@@ -45,7 +45,6 @@ def newevent(bot, update):
 
 
 def schedule(bot, update):
-    # TODO: auto-run /schedule after /newevent title is set.
     chat_id = update.message.chat_id
     dp.removeTelegramMessageHandler(chat[chat_id].newevent2)
     dp.removeTelegramMessageHandler(chat[chat_id].settitle2)
@@ -127,6 +126,7 @@ def main():
     dp.addTelegramCommandHandler("results", results)
     dp.addTelegramCommandHandler("finish", finish)
 
+    # For Your Eyes Only.
     dp.addTelegramCommandHandler("debug", debug)
 
     # All other handlers here.

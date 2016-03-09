@@ -117,11 +117,14 @@ class Chat(object):
         if self.input_title != 0:
             self.new_event_title = update.message.text
             self.event_title = self.new_event_title
-            self.input_title = False
             print('[DEBUG %i] %s set new title.' % (self.chat_id, update.message.from_user.first_name))
             bot.sendMessage(self.chat_id, reply_markup=hide, text='Title set to \"%s\".' % self.event_title)
+            # TODO: This part needs to be fixed (manual /schedule).
             if self.input_title == 1:
+                self.input_title = 0
                 self.setschedule(bot, update)
+            else:
+                self.input_title = 0
 
     def setschedule(self, bot, update):
         # Prepare to receive a new schedule for event.
@@ -140,6 +143,7 @@ class Chat(object):
 
     def setschedule2(self, bot, update):
         # When initialized, replies to setschedule messages will add new keys to the schedule dictionary.
+        # TODO: Put a logic gate around this.
         self.new_schedule = update.message.text
         self.schedule[self.new_schedule] = []
         self.schedule_keys.append(self.new_schedule)
