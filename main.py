@@ -28,7 +28,7 @@ def start(bot, update):
     chat[chat_id].init_complete(bot)
 
 
-def new(bot, update):
+def newevent(bot, update):
     chat_id = update.message.chat_id
     chat[chat_id].newevent(bot, update)
     chat[chat_id].settitle(bot, update)
@@ -36,6 +36,7 @@ def new(bot, update):
 
 
 def schedule(bot, update):
+    # TODO: auto-run /schedule after /newevent title is set.
     chat_id = update.message.chat_id
     dp.removeTelegramMessageHandler(chat[chat_id].settitle2)
     chat[chat_id].setschedule(bot, update)
@@ -48,8 +49,32 @@ def done(bot, update):
     chat[chat_id].setup_complete(bot, update)
     dp.addTelegramMessageHandler(chat[chat_id].display_voting)
     chat[chat_id].display_voting(bot)
-    for i in range(1, len(chat[chat_id].schedule)):
+    # We add 1 to the length of the schedule dictionary for list comprehension.
+    for i in range(1, len(chat[chat_id].schedule)+1):
         dp.addTelegramCommandHandler(str(i), chat[chat_id].selectoption)
+
+
+def results(bot, update):
+    chat_id = update.message.chat_id
+    chat[chat_id].viewresults(bot, update)
+
+
+def debug(bot, update):
+    # Temporary /debug command for testing the /results command.
+    print('[DEBUG] Launching developer debug run...')
+    chat_id = update.message.chat_id
+    chat[chat_id] = Chat(chat_id)
+    chat[chat_id].init_complete(bot)
+    chat[chat_id].title = 'Testing Bot Event'
+    chat[chat_id].schedule = {'1 Jan': ['Shing', 'Daniel', 'Jess', 'Anna'], '2 Jan': ['Jess', 'Anna'],
+                              '3 Jan': ['Shing', 'Daniel'], '4 Jan': ['Shing', 'Jess', 'Anna'],
+                              '5 Jan': ['Daniel']}
+    chat[chat_id].schedule_keys = ['1 Jan', '2 Jan', '3 Jan', '4 Jan', '5 Jan']
+    chat[chat_id].schedule_alt = '/1: 1 Jan\n/2: 2 Jan\n/3: 3 Jan\n/4: 4 Jan\n/5: 5 Jan\n'
+    chat[chat_id].input_title = False
+    chat[chat_id].input_schedule = False
+    chat[chat_id].accept_votes = True
+    chat[chat_id].viewresults(bot, update)
 
 
 def any_message(bot, update):
@@ -59,7 +84,7 @@ def any_message(bot, update):
 
 def unknown_command(bot, update):
     # Answer in Telegram
-    bot.sendMessage(update.message.chat_id, text='Command not recognized!')
+    bot.sendMessage(update.message.chat_id, text='Command not recognized! You can try /start.')
 
 
 def error(bot, update, error):
@@ -70,9 +95,12 @@ def error(bot, update, error):
 def main():
     # Slash command handlers here.
     dp.addTelegramCommandHandler("start", start)
-    dp.addTelegramCommandHandler("new", new)
+    dp.addTelegramCommandHandler("newevent", newevent)
     dp.addTelegramCommandHandler("schedule", schedule)
     dp.addTelegramCommandHandler("done", done)
+    dp.addTelegramCommandHandler("results", results)
+
+    dp.addTelegramCommandHandler("debug", debug)
 
     # All other handlers here.
     dp.addUnknownTelegramCommandHandler(unknown_command)
