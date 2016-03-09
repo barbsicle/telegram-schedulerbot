@@ -26,18 +26,28 @@ def start(bot, update):
     chat_id = update.message.chat_id
     chat[chat_id] = Chat(chat_id)
     chat[chat_id].init_complete(bot)
+    dp.removeTelegramMessageHandler(chat[chat_id].set_date)
+    dp.removeTelegramMessageHandler(chat[chat_id].set_date2)
 
 
 def newevent(bot, update):
     chat_id = update.message.chat_id
-    chat[chat_id].newevent(bot, update)
-    chat[chat_id].settitle(bot, update)
-    dp.addTelegramMessageHandler(chat[chat_id].settitle2)
+    try:
+        chat[chat_id]
+    except KeyError:
+        bot.sendMessage(chat_id, text='Error! Please initialize the bot with /start.')
+    else:
+        chat[chat_id].newevent(bot, update)
+        dp.removeTelegramMessageHandler(chat[chat_id].set_date)
+        dp.removeTelegramMessageHandler(chat[chat_id].set_date2)
+        dp.addTelegramMessageHandler(chat[chat_id].newevent2)
+        dp.addTelegramMessageHandler(chat[chat_id].settitle2)
 
 
 def schedule(bot, update):
     # TODO: auto-run /schedule after /newevent title is set.
     chat_id = update.message.chat_id
+    dp.removeTelegramMessageHandler(chat[chat_id].newevent2)
     dp.removeTelegramMessageHandler(chat[chat_id].settitle2)
     chat[chat_id].setschedule(bot, update)
     dp.addTelegramMessageHandler(chat[chat_id].setschedule2)
@@ -54,9 +64,24 @@ def done(bot, update):
         dp.addTelegramCommandHandler(str(i), chat[chat_id].selectoption)
 
 
+def event(bot, update):
+    chat_id = update.message.chat_id
+    chat[chat_id].display_voting(bot)
+
+
 def results(bot, update):
     chat_id = update.message.chat_id
     chat[chat_id].viewresults(bot, update)
+
+
+def finish(bot, update):
+    chat_id = update.message.chat_id
+    dp.removeTelegramMessageHandler(chat[chat_id].display_voting)
+    chat[chat_id].finishvoting(bot, update)
+    dp.addTelegramMessageHandler(chat[chat_id].set_date)
+    dp.addTelegramMessageHandler(chat[chat_id].set_date2)
+    for i in range(1, len(chat[chat_id].schedule)+1):
+        dp.removeTelegramCommandHandler(str(i), chat[chat_id].selectoption)
 
 
 def debug(bot, update):
@@ -65,7 +90,7 @@ def debug(bot, update):
     chat_id = update.message.chat_id
     chat[chat_id] = Chat(chat_id)
     chat[chat_id].init_complete(bot)
-    chat[chat_id].title = 'Testing Bot Event'
+    chat[chat_id].event_title = 'Testing Bot Event'
     chat[chat_id].schedule = {'1 Jan': ['Shing', 'Daniel', 'Jess', 'Anna'], '2 Jan': ['Jess', 'Anna'],
                               '3 Jan': ['Shing', 'Daniel'], '4 Jan': ['Shing', 'Jess', 'Anna'],
                               '5 Jan': ['Daniel']}
@@ -98,7 +123,9 @@ def main():
     dp.addTelegramCommandHandler("newevent", newevent)
     dp.addTelegramCommandHandler("schedule", schedule)
     dp.addTelegramCommandHandler("done", done)
+    dp.addTelegramCommandHandler("event", event)
     dp.addTelegramCommandHandler("results", results)
+    dp.addTelegramCommandHandler("finish", finish)
 
     dp.addTelegramCommandHandler("debug", debug)
 
@@ -109,6 +136,11 @@ def main():
 
     # Start the Bot.
     updater.start_polling()
+
+    # Run the bot until the you presses Ctrl-C or the process receives SIGINT,
+    # SIGTERM or SIGABRT. This should be used most of the time, since
+    # start_polling() is non-blocking and will stop the bot gracefully.
+    updater.idle()
 
 
 if __name__ == '__main__':

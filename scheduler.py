@@ -6,10 +6,6 @@
 import telegram
 
 
-# Just so I can see where it starts...
-print('[DEBUG] BACKEND STARTED AND OPERATIONAL!')
-
-
 # Define some styles for shorter form and easier reference.
 fr = telegram.ForceReply(selective=True)
 hide = telegram.ReplyKeyboardHide()
@@ -21,14 +17,20 @@ class Chat(object):
 
     Attributes
         id: ID of chat. Can take on negative number.
-        title: Name of event. Default empty string.
+        title: Title of chat (if group chat).
+        size: Number of members in this chat.
+        event_title: Name of event. Default empty string.
+        event_date: Final date set for event. Objective of the entire program! Default empty string.
         schedule: Date(s) and time(s) of event. Default empty dict.
         schedule_keys: List containing all keys of schedule. Default empty list.
         schedule_alt: Printable version of schedule. Default empty string.
-        input_title: Switch for inputting event title. Default False.
+        remake_event: Switch for remaking event. Default False.
+        input_title: Switch for inputting event title. Default 0.
         input_schedule: Switch for inputting schedule. Default False.
         accept_votes: Switch to begin accepting votes. Default False.
-        new_title: Placeholder for new title.
+        finalize_date: Switch to begin finalizing of date. Default 0.
+        custom_keyboard: Placeholder for custom keyboards. Default empty list.
+        new_event_title: Placeholder for new event title.
         new_schedule: Placeholder for new keys to be added into the schedule dict.
         option: Placeholder for option voted on.
         voters: Placeholder for all unique voters. Default empty string.
@@ -39,14 +41,19 @@ class Chat(object):
     def __init__(self, chat_id):
         # Initializing new chat variables.
         self.chat_id = chat_id
-        self.title = ''
+        self.size = telegram.Chat(chat_id, 'group')
+        self.event_title = ''
+        self.event_date = ''
         self.schedule = {}
         self.schedule_keys = []
         self.schedule_alt = ''
-        self.input_title = False
+        self.remake_event = False
+        self.input_title = 0
         self.input_schedule = False
         self.accept_votes = False
-        self.new_title = ''
+        self.finalize_date = 0
+        self.custom_keyboard = []
+        self.new_event_title = ''
         self.new_schedule = ''
         self.option = 0
         self.voters = []
@@ -62,30 +69,59 @@ class Chat(object):
             exit('[DEBUG] Something went wrong and chat was not initialized. Please investigate.')
 
     def newevent(self, bot, update):
-        if not self.input_title and self.title == '':
+        if self.input_title == 0 and self.event_title == '':
             bot.sendMessage(self.chat_id, reply_to_message_id=update.message.message_id,
                             text='New event requested. Please follow the instructions below...')
+            self.settitle(bot, update)
+        elif self.input_title == 0 and self.finalize_date == 3:
+            print('[DEBUG %i] Deleting old (scheduled) event and restarting...' % self.chat_id)
+            bot.sendMessage(self.chat_id, reply_to_message_id=update.message.message_id,
+                            text='New event requested. Please follow the instructions below...')
+            self.__init__(self.chat_id)
+            self.settitle(bot, update)
+        elif self.input_title == 0 and self.event_title != '':
+            self.remake_event = True
+            self.custom_keyboard = [['Yes', 'No']]
+            reply_markup = telegram.ReplyKeyboardMarkup(self.custom_keyboard)
+            bot.sendMessage(self.chat_id, reply_to_message_id=update.message.message_id, reply_markup=reply_markup,
+                            text='Event creation already in progress!\n'
+                                 'Are you sure you want to proceed with creating a new event?')
+
+    def newevent2(self, bot, update):
+        if self.remake_event and update.message.text == 'Yes':
+            self.remake_event = False
+            bot.sendMessage(self.chat_id, reply_to_message_id=update.message.message_id,
+                            text='Deleting old event and starting over...')
+            self.__init__(self.chat_id)
+            self.settitle(bot, update)
+        elif self.remake_event and update.message.text == 'No':
+            self.remake_event = False
+            bot.sendMessage(self.chat_id, reply_to_message_id=update.message.message_id,
+                            text='Reverting back to normal parameters...')
 
     def settitle(self, bot, update):
         # Prepare to receive new title for event.
-        if not self.input_title and self.title == '':
-            self.input_title = True
+        if self.input_title == 0 and self.event_title == '':
+            self.input_title = 1
             print('[DEBUG %i] %s began setting new title.' % (self.chat_id, update.message.from_user.first_name))
             bot.sendMessage(self.chat_id, reply_markup=fr, text='Please set the title of your event.\n')
-        elif not self.input_title:
-            self.input_title = True
+        elif self.input_title == 0 and self.event_title != '':
+            self.input_title = 2
             print('[DEBUG %i] %s began re-setting new title.' % (self.chat_id, update.message.from_user.first_name))
             bot.sendMessage(self.chat_id, reply_markup=fr, text='Please re-set the title of your event.\n')
+        else:
+            exit('[DEBUG %i] Error. Please debug.' % self.chat_id)
 
     def settitle2(self, bot, update):
         # When initialized, replies to settitle messages will trigger a change in the title.
-        if self.input_title:
-            self.new_title = update.message.text
-            self.title = self.new_title
+        if self.input_title != 0:
+            self.new_event_title = update.message.text
+            self.event_title = self.new_event_title
             self.input_title = False
             print('[DEBUG %i] %s set new title.' % (self.chat_id, update.message.from_user.first_name))
-            bot.sendMessage(self.chat_id, reply_markup=hide, text='Title set to \"%s\".' % self.title)
-            bot.sendMessage(self.chat_id, text='Please use /schedule to begin setting choices.')
+            bot.sendMessage(self.chat_id, reply_markup=hide, text='Title set to \"%s\".' % self.event_title)
+            if self.input_title == 1:
+                self.setschedule(bot, update)
 
     def setschedule(self, bot, update):
         # Prepare to receive a new schedule for event.
@@ -93,18 +129,17 @@ class Chat(object):
             self.input_schedule = True
             print('[DEBUG %i] %s begins to create schedule...' % (self.chat_id, update.message.from_user.first_name))
             bot.sendMessage(self.chat_id, reply_to_message_id=update.message.message_id, reply_markup=fr,
-                            text='Please set a possible meeting date/time for %s.' % self.title)
+                            text='Please set a possible meeting date/time for %s.' % self.event_title)
         # TODO: More control over modification of schedule.
         elif self.schedule:
             self.input_schedule = True
             print('[DEBUG %i] %s begins to remake schedule...' % (self.chat_id, update.message.from_user.first_name))
             bot.sendMessage(self.chat_id, reply_to_message_id=update.message.message_id,
                             text='Schedule reset. Please restart the schedule creation.\n'
-                                 'Please set the first date/time to meet for %s.' % self.title)
+                                 'Please set the first date/time to meet for %s.' % self.event_title)
 
     def setschedule2(self, bot, update):
         # When initialized, replies to setschedule messages will add new keys to the schedule dictionary.
-        # TODO: Check if while loop stops the updater.
         self.new_schedule = update.message.text
         self.schedule[self.new_schedule] = []
         self.schedule_keys.append(self.new_schedule)
@@ -119,6 +154,7 @@ class Chat(object):
         i = 0
         for n in self.schedule_keys:
             i += 1
+            self.custom_keyboard[0].append('/'+str(i))
             self.schedule_alt += ('/' + str(i) + ': ' + str(n) + '\n')
             self.schedule[n] = []
         print('[DEBUG %i] List of Options:\n%s' % (self.chat_id, self.schedule_alt))
@@ -128,16 +164,18 @@ class Chat(object):
         bot.sendMessage(self.chat_id, reply_markup=hide, text='Schedule and poll created successfully.')
 
     def display_voting(self, bot):
-        # TODO: Markup keyboard buttons for voting.
         if self.accept_votes:
+            reply_markup = telegram.ReplyKeyboardMarkup(self.custom_keyboard)
             print('[DEBUG %i] Chat requested poll to be posted.' % self.chat_id)
-            bot.sendMessage(self.chat_id, reply_markup=fr,
+            bot.sendMessage(self.chat_id, reply_markup=reply_markup,
                             text='[NEW EVENT]\n%s\n'
                                  'Please state your availability for the below dates:\n%s\n'
                                  'You can vote for as many dates as you can attend.\n'
                                  'You can cancel your vote for a date by voting twice on the date.\n\n'
-                                 'Send /results to view the current poll standings.'
-                                 % (self.title, self.schedule_alt))
+                                 'Send /event to repeat the current event\n'
+                                 'Send /results to view the current availability roster.\n'
+                                 'Send /finalise to close voting and set a date for the event.'
+                                 % (self.event_title, self.schedule_alt))
 
     def selectoption(self, bot, update):
         # Translate the slash command back into the key to match to the dict.
@@ -162,6 +200,7 @@ class Chat(object):
         # Use a loop to go through keys and print out each person available.
         print('[DEBUG %i] Results for Event requested. Sending to Chat...' % self.chat_id)
         mostvotes = 0
+        self.custom_keyboard = []
         for n in self.schedule_keys:
             i = ', '.join(str(p) for p in self.schedule[n])
             self.results += (str(n) + ' - ' + str(len(self.schedule[n])) + ' available\n' + i + '\n\n')
@@ -178,10 +217,67 @@ class Chat(object):
             r = 'Recommended date for your event: ' + str(self.best_date[0])
             print('[DEBUG %i] Results sent.' % self.chat_id)
             bot.sendMessage(self.chat_id, reply_to_message_id=update.message.message_id,
-                            text='Results for Event: %s\n\n%s%s' % (self.title, self.results, r))
+                            text='Results for Event: %s\n\n%s%s\n'
+                                 'Use /finish to finish voting and decide.' % (self.event_title, self.results, r))
+            # Reset results list so that it does not repeat itself.
+            self.results = ''
         elif len(self.best_date) > 1:
             b = ', '.join(str(p) for p in self.best_date)
             r = 'Multiple dates found. Recommended dates for your event: ' + str(b)
             print('[DEBUG %i] Results sent.' % self.chat_id)
             bot.sendMessage(self.chat_id, reply_to_message_id=update.message.message_id,
-                            text='Results for Event: %s\n\n%s%s' % (self.title, self.results, r))
+                            text='Results for Event: %s\n\n%s%s\n'
+                                 'Use /finish to finish voting and decide.' % (self.event_title, self.results, r))
+            # Reset results list so that it does not repeat itself.
+            self.results = ''
+
+    def finishvoting(self, bot, update):
+        # Close voting, show results, and request for final date.
+        self.accept_votes = False
+        print('[DEBUG %i] Voting for event concluded.' % self.chat_id)
+        self.viewresults(bot, update)
+        self.finalize_date = 1
+        self.custom_keyboard.append(self.best_date)
+        self.custom_keyboard[0].append('CUSTOM DATE')
+        reply_markup = telegram.ReplyKeyboardMarkup(self.custom_keyboard)
+        bot.sendMessage(self.chat_id, reply_to_message_id=update.message.message_id, reply_markup=reply_markup,
+                        text='Please input your final choice of date/time for the event.')
+        if 'CUSTOM DATE' in self.best_date:
+            self.best_date.remove('CUSTOM DATE')
+
+    def set_date0(self, bot, update):
+            print('[DEBUG %i] Date set for event.' % self.chat_id)
+            self.finalize_date = 3
+            try:
+                old_title = update.message.chat_title
+            except AttributeError:
+                # Chat using bot is a one-to-one; scheduler is quite useless like this.
+                bot.sendMessage(self.chat_id, reply_markup=hide,
+                                text='%s will be happening on %s!\n'
+                                     'But you are in a personal chat...\n'
+                                     'Please try to schedule an event with some friends!' %
+                                     (self.event_title, self.event_date))
+            else:
+                bot.sendMessage(self.chat_id, text='%s will be happening on %s!\n'
+                                                   'Please paste the following as your chat title:' %
+                                                   (self.event_title, self.event_date))
+                bot.sendMessage(self.chat_id, text='%s - %s @ %s' % (old_title, self.event_title, self.event_date))
+                bot.sendMessage(self.chat_id, text='Thanks for using Scheduler Bot!\n'
+                                                   'You can use /newevent to start scheduling another event!')
+
+    def set_date(self, bot, update):
+        # Set date for the event and lock it in.
+        if self.finalize_date == 1 and update.message.text in self.best_date:
+            self.event_date = update.message.text
+            self.set_date0(bot, update)
+        if self.finalize_date == 1 and update.message.text == 'CUSTOM DATE':
+            self.finalize_date = 2
+            print('[DEBUG %i] %s is setting a custom date.' % (self.chat_id, update.message.from_user.first_name))
+            bot.sendMessage(self.chat_id, reply_to_message_id=update.message.message_id, reply_markup=fr,
+                            text='Please type the custom date and time you would like to set.')
+
+    def set_date2(self, bot, update):
+        if self.finalize_date == 2 and update.message.text != 'CUSTOM DATE':
+            bot.sendMessage(self.chat_id, text='Sorry everyone, but the vote was in vain :(')
+            self.event_date = update.message.text
+            self.set_date0(bot, update)
