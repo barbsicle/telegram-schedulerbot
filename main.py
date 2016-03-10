@@ -42,6 +42,7 @@ def newevent(bot, update):
         dp.removeTelegramMessageHandler(chat[chat_id].set_date2)
         dp.addTelegramMessageHandler(chat[chat_id].newevent2)
         dp.addTelegramMessageHandler(chat[chat_id].settitle2)
+        dp.addTelegramMessageHandler(chat[chat_id].setschedule2)
 
 
 def schedule(bot, update):
@@ -54,6 +55,8 @@ def schedule(bot, update):
 
 def done(bot, update):
     chat_id = update.message.chat_id
+    dp.removeTelegramMessageHandler(chat[chat_id].newevent2)
+    dp.removeTelegramMessageHandler(chat[chat_id].settitle2)
     dp.removeTelegramMessageHandler(chat[chat_id].setschedule2)
     chat[chat_id].setup_complete(bot, update)
     dp.addTelegramMessageHandler(chat[chat_id].display_voting)

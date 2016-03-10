@@ -89,12 +89,14 @@ class Chat(object):
 
     def newevent2(self, bot, update):
         if self.remake_event and update.message.text == 'Yes':
+            print('[DEBUG %i] newevent2 triggered.' % self.chat_id)
             self.remake_event = False
             bot.sendMessage(self.chat_id, reply_to_message_id=update.message.message_id,
                             text='Deleting old event and starting over...')
             self.__init__(self.chat_id)
             self.settitle(bot, update)
         elif self.remake_event and update.message.text == 'No':
+            print('[DEBUG %i] newevent2 triggered.' % self.chat_id)
             self.remake_event = False
             bot.sendMessage(self.chat_id, reply_to_message_id=update.message.message_id,
                             text='Reverting back to normal parameters...')
@@ -115,6 +117,7 @@ class Chat(object):
     def settitle2(self, bot, update):
         # When initialized, replies to settitle messages will trigger a change in the title.
         if self.input_title != 0:
+            print('[DEBUG %i] settitle2 triggered.' % self.chat_id)
             self.new_event_title = update.message.text
             self.event_title = self.new_event_title
             print('[DEBUG %i] %s set new title.' % (self.chat_id, update.message.from_user.first_name))
@@ -143,19 +146,27 @@ class Chat(object):
 
     def setschedule2(self, bot, update):
         # When initialized, replies to setschedule messages will add new keys to the schedule dictionary.
-        # TODO: Put a logic gate around this.
-        self.new_schedule = update.message.text
-        self.schedule[self.new_schedule] = []
-        self.schedule_keys.append(self.new_schedule)
-        print('[DEBUG %i] setschedule2 registered an option.' % self.chat_id)
-        bot.sendMessage(self.chat_id, reply_to_message_id=update.message.message_id, reply_markup=fr,
-                        text='Option registered. Send another option, or type /done to publish.')
+        # TODO: Exception if option is already present in the list.
+        if self.input_schedule and update.message.text != self.event_title:
+            self.new_schedule = update.message.text
+            print('[DEBUG %i] setsachedule2 triggered.' % self.chat_id)
+            if self.new_schedule in self.schedule_keys:
+                print('[DEBUG %i] Identical option set. Ignoring.' % self.chat_id)
+                bot.sendMessage(self.chat_id, reply_to_message_id=update.message.message_id, reply_markup=fr,
+                                text='Error! Option already exists. Please try another or type /done to publish.')
+            else:
+                self.schedule[self.new_schedule] = []
+                self.schedule_keys.append(self.new_schedule)
+                print('[DEBUG %i] Chat registered an option.' % self.chat_id)
+                bot.sendMessage(self.chat_id, reply_to_message_id=update.message.message_id, reply_markup=fr,
+                                text='Option registered. Send another option, or type /done to publish.')
 
     def setup_complete(self, bot, update):
         # Finish setting up the event. Activate the bot to take votes.
         self.input_schedule = False
         # Set up list of voting possibilities.
         i = 0
+        self.custom_keyboard.append([])
         for n in self.schedule_keys:
             i += 1
             self.custom_keyboard[0].append('/'+str(i))
