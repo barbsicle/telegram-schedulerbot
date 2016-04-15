@@ -4,6 +4,7 @@
 
 
 import telegram
+import logging
 
 
 # Define some styles for shorter form and easier reference.
