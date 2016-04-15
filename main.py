@@ -129,6 +129,7 @@ def finish(bot, update):
         dp.addTelegramMessageHandler(chat[chat_id].set_date2)
         for i in range(1, len(chat[chat_id].schedule)+1):
             dp.removeTelegramCommandHandler(str(i), chat[chat_id].selectoption)
+        del chat[chat_id]
 
 
 def debug(bot, update):
