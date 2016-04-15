@@ -79,12 +79,12 @@ class Chat(object):
             bot.sendMessage(self.chat_id, reply_to_message_id=update.message.message_id,
                             text='Please wait till the schedule is created before trying other commands!')
         elif self.input_title == 0 and self.event_title == '':
-            bot.sendMessage(self.chat_id, reply_to_message_id=update.message.message_id,
-                            text='New event requested. Please follow the instructions below...')
+            bot.sendMessage(self.chat_id, reply_to_message_id=update.message.message_id, reply_markup=fr,
+                            text='New event requested...\nPlease set the title of your event.')
             self.settitle(bot, update)
         elif self.input_title == 0 and self.finalize_date == 3:
             print('[DEBUG %i] Deleting old (scheduled) event and restarting...' % self.chat_id)
-            bot.sendMessage(self.chat_id, reply_to_message_id=update.message.message_id,
+            bot.sendMessage(self.chat_id, reply_to_message_id=update.message.message_id, reply_markup=fr,
                             text='New event requested...\nPlease set the title of your event.')
             self.__init__(self.chat_id)
             self.settitle(bot, update)
