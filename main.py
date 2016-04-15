@@ -30,7 +30,11 @@ def start(bot, update):
         chat[chat_id] = Chat(chat_id)
         chat[chat_id].init_complete(bot)
     else:
-        if chat[chat_id.schedule]:
+        try:
+            chat[chat_id.schedule]
+        except AttributeError:
+            pass
+        else:
             for x in range(1, len(chat[chat_id].schedule)+1):
                 dp.removeTelegramCommandHandler(str(x), chat[chat_id].selectoption)
         dp.removeTelegramMessageHandler(chat[chat_id].set_date)
