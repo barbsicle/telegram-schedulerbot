@@ -85,7 +85,7 @@ class Chat(object):
         elif self.input_title == 0 and self.finalize_date == 3:
             print('[DEBUG %i] Deleting old (scheduled) event and restarting...' % self.chat_id)
             bot.sendMessage(self.chat_id, reply_to_message_id=update.message.message_id,
-                            text='New event requested. Please follow the instructions below...')
+                            text='New event requested...\nPlease set the title of your event.')
             self.__init__(self.chat_id)
             self.settitle(bot, update)
         elif self.input_title == 0 and self.event_title != '':
@@ -116,7 +116,6 @@ class Chat(object):
         if self.input_title == 0 and self.event_title == '':
             self.input_title = 1
             print('[DEBUG %i] %s began setting new title.' % (self.chat_id, update.message.from_user.first_name))
-            bot.sendMessage(self.chat_id, reply_markup=fr, text='Please set the title of your event.\n')
         elif self.input_title == 0 and self.event_title != '':
             self.input_title = 2
             print('[DEBUG %i] %s began re-setting new title.' % (self.chat_id, update.message.from_user.first_name))
