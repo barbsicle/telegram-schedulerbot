@@ -116,13 +116,11 @@ class Chat(object):
         if self.input_title == 0 and self.event_title == '':
             self.input_title = 1
             print('[DEBUG %i] %s began setting new title.' % (self.chat_id, update.message.from_user.first_name))
-            bot.sendMessage(self.chat_id, reply_markup=fr, text='@%s: Please set the title of your event.\n' %
-                            update.message.from_user.username)
+            bot.sendMessage(self.chat_id, reply_markup=fr, text='Please set the title of your event.\n')
         elif self.input_title == 0 and self.event_title != '':
             self.input_title = 2
             print('[DEBUG %i] %s began re-setting new title.' % (self.chat_id, update.message.from_user.first_name))
-            bot.sendMessage(self.chat_id, reply_markup=fr, text='@%s Please re-set the title of your event.\n' %
-                            update.message.from_user.username)
+            bot.sendMessage(self.chat_id, reply_markup=fr, text='Please re-set the title of your event.\n')
         else:
             exit('[DEBUG %i] Error. Please debug.' % self.chat_id)
 
@@ -148,8 +146,7 @@ class Chat(object):
                 print('[DEBUG %i] %s begins to create schedule...' %
                       (self.chat_id, update.message.from_user.first_name))
                 bot.sendMessage(self.chat_id, reply_to_message_id=update.message.message_id, reply_markup=fr,
-                                text='@%s: Please set the possible meeting date(s) or time(s) for your event.' %
-                                update.message.from_user.username)
+                                text='Please set the possible meeting date(s) or time(s) for your event.')
             # TODO: More control over modification of schedule.
             elif self.schedule:
                 self.input_schedule = True
@@ -157,8 +154,7 @@ class Chat(object):
                       (self.chat_id, update.message.from_user.first_name))
                 bot.sendMessage(self.chat_id, reply_to_message_id=update.message.message_id,
                                 text='Schedule reset. Please restart the schedule creation.\n'
-                                     '@%s: Please set the possible meeting date(s) or time(s) for your event.' %
-                                update.message.from_user.username)
+                                     'Please set the possible meeting date(s) or time(s) for your event.')
         elif self.event_title == '':
             bot.sendMessage(self.chat_id, reply_markup=hide, text='Error! Event title is not yet created.\n'
                                                                   'Try using /newevent to create a new event.')
@@ -238,7 +234,6 @@ class Chat(object):
             #                 text='Response received. You are available for %s.' % self.option)
 
     def viewresults(self, bot, update):
-        # TODO: Sort each list alphabetically
         # View results at the current point of time.
         # Use a loop to go through keys and print out each person available.
         if self.accept_votes:
@@ -289,8 +284,7 @@ class Chat(object):
             self.custom_keyboard[0].append('CUSTOM DATE')
             reply_markup = telegram.ReplyKeyboardMarkup(self.custom_keyboard)
             bot.sendMessage(self.chat_id, reply_to_message_id=update.message.message_id, reply_markup=reply_markup,
-                            text='@%s: Please input your final choice of date/time for the event.' %
-                                 update.message.from_user.username)
+                            text='Please input your final choice of date/time for the event.')
             if 'CUSTOM DATE' in self.best_date:
                 self.best_date.remove('CUSTOM DATE')
         elif not self.accept_votes:

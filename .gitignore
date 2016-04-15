@@ -3,3 +3,13 @@
 ################################################################################
 
 /venv
+/obj/Debug
+/.vs/telegram-schedulerbot/v14
+/telegram-schedulerbot.sln
+/telegram-schedulerbot.pyproj
+/Dockerfile
+/Core.pyproj
+/app.yaml
+/.dockerignore
+/__pycache__
+/bin
