@@ -24,6 +24,7 @@ logger = logging.getLogger(__name__)
 
 
 def start(bot, update):
+    global used
     chat_id = update.message.chat_id
     used += 1
     logging.info('[DEBUG] /start command run %i times!' % used)
