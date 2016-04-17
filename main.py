@@ -7,11 +7,12 @@ import logging
 from scheduler import Chat
 
 
-# Universal variables (Bot setup, dictionary of chats, last chat ID)
+# Universal variables (Bot setup, dictionary of chats, last chat ID, Usage stats)
 token = '203435568:AAFtnHEPa2H1ZKLz0nX50A1K50I47sbndiA'
 updater = telegram.Updater(token)
 dp = updater.dispatcher
 chat = {}
+used = 0
 
 
 # Enable Logging
@@ -24,6 +25,8 @@ logger = logging.getLogger(__name__)
 
 def start(bot, update):
     chat_id = update.message.chat_id
+    used += 1
+    logging.info('[DEBUG] /start command run %i times!' % used)
     try:
         chat[chat_id]
     except KeyError:

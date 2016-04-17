@@ -192,7 +192,7 @@ class Chat(object):
             self.custom_keyboard[0].append('/'+str(i))
             self.schedule_alt += ('/' + str(i) + ': ' + str(n) + '\n')
             self.schedule[n] = []
-        logging.info('[DEBUG %i] List of Options:\n%s' % (self.chat_id, self.schedule_alt))
+        logging.info('[DEBUG %i] List of Options:\n%s' % (self.chat_id, self.schedule_alt - "\n"))
         self.accept_votes = True
         logging.info('[DEBUG %i] Event successfully set up by %s.' % (self.chat_id, update.message.from_user.first_name))
         logging.info('[DEBUG %i] Now accepting votes...' % self.chat_id)
@@ -291,7 +291,7 @@ class Chat(object):
             bot.sendMessage(self.chat_id, reply_markup=hide, text='Error! The poll is not yet created.')
 
     def set_date0(self, bot, update):
-        logging.info('[DEBUG %i] Date set for event.' % self.chat_id)
+        logging.info('[DEBUG %i] Date set for event. Cleaning up variables.' % self.chat_id)
         self.finalize_date = 3
         old_title = update.message.chat.title
         if old_title == '':
